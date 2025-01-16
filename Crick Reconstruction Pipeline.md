@@ -146,3 +146,33 @@ Run this command via:
 csh -f AreTomo_rec.csh 
 ```
 Use imod to look at your beautiful quick tomograms. Best assessed with the XYZ viewer and a cup of tea. 
+
+Select your tomograms which have your feature of interest in them for denoising. 
+
+## ITS WARP TIME
+Create a new directory and inside this make two directories, one called frames and the other called original_mdocs, cp your frames and mdocs of your chosen tomograms to the indicated directories. 
+Inside original_mdocs create a python script called adjust_angles: 
+
+```
+import glob
+
+#Input
+mdoc_files = '*.mdoc'
+add_angle = +10 #Pretilt to add to tilts
+output_prefix = 'test_' #Prefix for the out file name
+###
+
+mdoc_files = glob.glob(mdoc_files)
+
+for mdoc_file in mdoc_files:
+    filedata = open(mdoc_file, 'r')
+    with open(f'{output_prefix}{mdoc_file}', 'a+') as newfile:
+        for line in filedata.readlines():
+            if 'TiltAngle =' not in line:
+                newfile.write(line)
+            else:
+                original_angle = float(line.split('=',1)[1])
+                new_angle = original_angle + add_angle
+                newfile.write(f'TiltAngle = {str(new_angle)}\n')
+```
+
