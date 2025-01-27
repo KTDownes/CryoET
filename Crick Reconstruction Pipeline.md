@@ -4,6 +4,8 @@ Welcome to my cryoET reconstruction pipeline!
 Request X GPU
 I've only tried this with Fluxbox (Xfce is much better for your eyes). 
 
+*Whilst OnDemand is down you can ssh into nemo and then submit sbatch commands. I haven't done this for AreTomo but in theory it should work. I demonstrate how sbatch commands work in the warp section*
+
 cd or mkdir a processing directory for your tomograms. Inside cp your mdocs and fractions.mrc. Inside this directory make a directory called motioncorr.
 ```
 ml imod 
@@ -283,6 +285,8 @@ Lets do some tidying up. rm mdocs and mv mdoc_mod to mdoc.
 
 Now are mdocs are all happy and correct and ready for warp! 
 Some warp commands can be run just from ssh-ing into nemo. However some need GPU and thus must be submitted as sbatch commands until ondemand is working again. 
+
+**Examples of sbatch commands**
 
 First step:
 
