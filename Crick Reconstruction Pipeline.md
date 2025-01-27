@@ -175,4 +175,601 @@ for mdoc_file in mdoc_files:
                 new_angle = original_angle + add_angle
                 newfile.write(f'TiltAngle = {str(new_angle)}\n')
 ```
+This will output mdoc files called test_mdocs. Move these to a directory called mdocs.
+
+In this directory create the following python file - clean_mdoc.py. 
+In this directory create an excel file with three columns containing the mdoc file name, the first good tilt number and the last good tilt number. clean_mdoc.py will remove the tilts outside of this range for you. 
+
+Also create a directory called mdoc_mod
+
+```
+import os
+import re
+import pandas as pd
+import numpy as np
+
+def process_mdoc_file(input_file, output_file, instance_range):
+    # Define the TiltAngle range
+    tilt_angles = np.linspace(-60, 60, 41)  # 41 TiltAngles from -60 to 60
+
+    print(f"Processing file: {input_file}")
+
+    # Read the mdoc file
+    if not os.path.exists(input_file):
+        print(f"Warning: File '{input_file}' not found, skipping...")
+        return
+
+    with open(input_file, 'r') as file:
+        lines = file.readlines()
+
+    output_lines = []
+    keep_section = False
+    current_tilt_angle = None
+
+    # Loop through the lines in the mdoc file
+    for i, line in enumerate(lines):
+        # Add header lines to the output before the first [ZValue = x]
+        if '[ZValue' in line and not output_lines:
+            output_lines.extend(lines[:i])  # Keep everything before the first [ZValue]
+
+        # Check for the [ZValue] header which marks the start of a section
+        if line.startswith('[ZValue'):
+            # Try to extract the TiltAngle from the next line (e.g., TiltAngle = -54)
+            tilt_angle_match = re.search(r'TiltAngle = (-?\d+\.\d+)', lines[i+1])
+
+            if tilt_angle_match:
+                tilt_angle = float(tilt_angle_match.group(1))
+
+                # Find the corresponding instance for the TiltAngle (mapping it to 1-41)
+                # We approximate the tilt_angle to the closest value in the tilt_angles array
+                instance = np.argmin(np.abs(tilt_angles - tilt_angle)) + 1  # +1 to match 1-based indexing
+
+                # Print the tilt angle and instance number outside the if condition
+                print(f"Found TiltAngle: {tilt_angle} -> Corresponding instance: {instance}")
+                print(f"Searching for TiltAngle {tilt_angle} (instance {instance})")
+
+                # Determine whether the current section should be kept
+                if instance >= instance_range[0] and instance <= instance_range[1]:
+                    keep_section = True
+                    print(f"Keeping section with TiltAngle: {tilt_angle} (Instance: {instance})")
+                else:
+                    keep_section = False
+                    print(f"Skipping section with TiltAngle: {tilt_angle} (Instance: {instance})")
+            else:
+                print(f"No TiltAngle found in this section at index {i}")
+
+        # If we should keep the section, add it to the output
+        if keep_section:
+            output_lines.append(line)
+
+    # Write the processed lines to the output file
+    if output_lines:
+        with open(output_file, 'w') as file:
+            file.writelines(output_lines)
+        print(f"File written to {output_file}")
+    else:
+        print(f"Warning: No sections were kept for '{input_file}'")
+          
+def main():
+    # Read the Excel file with the instance ranges
+    excel_file = 'L17_P1_2_Tilts.xlsx'  # Updated file name
+    df = pd.read_excel(excel_file, header=None)
+
+    # Process each row in the Excel file
+    for _, row in df.iterrows():
+        file_id = row[0]
+        
+        # If file_id is NaN, skip this row
+        if pd.isna(file_id): 
+            print(f"Warning: Missing file_id at row {_}, skipping...")
+            continue
+        
+#        file_id = int(file_id)
+        first_instance = int(row[1])
+        last_instance = int(row[2])
+
+        # Generate the input and output file paths
+        input_file = f"mdocs/{file_id}"  # Adjust file path as needed
+        output_file = f"mdoc_mod/{file_id}"
+
+        # Call the processing function
+        process_mdoc_file(input_file, output_file, (first_instance, last_instance))
+
+if __name__ == '__main__':
+    main()
+
+```
+Lets do some tidying up. rm mdocs and mv mdoc_mod to mdoc. 
+
+Now are mdocs are all happy and correct and ready for warp! 
+Some warp commands can be run just from ssh-ing into nemo. However some need GPU and thus must be submitted as sbatch commands until ondemand is working again. 
+
+First step:
+
+```
+ml WarpTools/2.0.0
+source activate warp
+
+WarpTools create_settings \
+--folder_data frames \
+--folder_processing warp_frameseries \
+--output warp_frameseries.settings \
+--extension "*.mrc" \
+--angpix 2.24 \  #change to suit your data
+--exposure 3.5  #change to suit your data
+
+WarpTools create_settings \
+--output warp_tiltseries.settings \
+--folder_processing warp_tiltseries \
+--folder_data tomostar \
+--extension "*.tomostar" \
+--angpix 2.24 \  #change to suit your data
+--exposure 3.5 \  #change to suit your data
+--tomo_dimensions 3710x3838x2000 #change to suit your data
+```
+Creates all the settings you want. 
+Next is your 1st sbatch command: 
+I called mine Motioncorr_ctf
+```
+#!/bin/bash
+#SBATCH --partition=ga100
+#SBATCH --job-name=WARP
+#SBATCH --ntasks=1
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=256
+#SBATCH --error=warp_err.log
+#SBATCH --output=warp_out.log
+#SBATCH --gres=gpu:4
+#SBATCH --mem=0
+#SBATCH --time=1-0:0:0
+#SBATCH --partition=ga100
+
+ml WarpTools/2.0.0
+source activate warp
+  WarpTools fs_motion_and_ctf \
+  --settings warp_frameseries.settings \
+  --m_grid 1x1x4 \
+  --c_grid 2x2x1 \
+  --c_range_min 40 \
+  --c_range_max 8 \
+  --c_defocus_min 5.5 \
+  --c_defocus_max 11.5 \
+  --c_use_sum \
+  --out_averages \
+  --out_average_halves \
+  --perdevice 2 \
+  --device_list 0
+```
+To run sbatch 
+sbatch motioncorr_ctf 
+“job submitted” 
+Squeue -p ga100
+
+You can check the process by looking at the warp_err.log and warp_out.log
+
+Once finished the below jobs can be run in turn. Those requiring sbatch commands can be run in the same manner i.e. sbatch sbatch_file_name. 
+
+```
+# TS Import
+  WarpTools ts_import \
+  --mdocs mdocs \
+  --frameseries warp_frameseries \
+  --tilt_exposure 3.5 \
+  --min_intensity 0.1 \
+  --dont_invert \
+  --output tomostar/
+```
+
+``` 
+Stack 
+#!/bin/bash
+#SBATCH --partition=ga100
+#SBATCH --job-name=WARP
+#SBATCH --ntasks=1
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=256
+#SBATCH --error=warp_err.log
+#SBATCH --output=warp_out.log
+#SBATCH --gres=gpu:4
+#SBATCH --mem=0
+#SBATCH --time=1-0:0:0
+#SBATCH --partition=ga100
+
+ml WarpTools/2.0.0
+source activate warp
+WarpTools ts_stack \
+  --settings warp_tiltseries.settings \
+  --angpix 10
+```
+
+```
+Warp_aretomo
+
+#!/bin/bash
+#SBATCH --partition=ga100
+#SBATCH --job-name=WARP
+#SBATCH --ntasks=1
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=256
+#SBATCH --error=warp_err.log
+#SBATCH --output=warp_out.log
+#SBATCH --gres=gpu:4
+#SBATCH --mem=0
+#SBATCH --time=1-0:0:0
+#SBATCH --partition=ga100
+
+ml WarpTools/2.0.0
+source activate warp
+ml AreTomo2
+WarpTools ts_aretomo --settings warp_tiltseries.settings --angpix 10 --alignz 1500 --axis 93 --axis_iter 3 --device_list 4
+```
+```
+Sbatch defocus hand and flipping if needed 
+Warp_hand
+#!/bin/bash
+#SBATCH --partition=ga100
+#SBATCH --job-name=WARP
+#SBATCH --ntasks=1
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=64
+#SBATCH --error=warp_err.log
+#SBATCH --output=warp_out.log
+#SBATCH --gres=gpu:1
+#SBATCH --mem=0
+#SBATCH --time=1-0:0:0
+#SBATCH --partition=ga100
+
+ml WarpTools/2.0.0
+source activate warp
+WarpTools ts_defocus_hand --settings warp_tiltseries.settings --check
+
+Warp_flip
+#!/bin/bash
+#SBATCH --partition=ga100
+#SBATCH --job-name=WARP
+#SBATCH --ntasks=1
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=64
+#SBATCH --error=warp_err.log
+#SBATCH --output=warp_out.log
+#SBATCH --gres=gpu:1
+#SBATCH --mem=0
+#SBATCH --time=1-0:0:0
+#SBATCH --partition=ga100
+
+ml WarpTools/2.0.0
+source activate warp
+WarpTools ts_defocus_hand --settings warp_tiltseries.settings --set_flip
+```
+
+```
+Warp_ctf
+#!/bin/bash
+#SBATCH --partition=ga100
+#SBATCH --job-name=WARP
+#SBATCH --ntasks=1
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=256
+#SBATCH --error=warp_err.log
+#SBATCH --output=warp_out.log
+#SBATCH --gres=gpu:4
+#SBATCH --mem=0
+#SBATCH --time=1-0:0:0
+#SBATCH --partition=ga100
+
+ml WarpTools/2.0.0
+source activate warp
+WarpTools ts_ctf --settings warp_tiltseries.settings --range_high 8 --defocus_max 11.5 --defocus_min 5.5
+```
+```                                                                                                 
+Warp_reconstruct 
+#!/bin/bash
+#SBATCH --partition=ga100
+#SBATCH --job-name=WARP
+#SBATCH --ntasks=1
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=256
+#SBATCH --error=warp_err.log
+#SBATCH --output=warp_out.log
+#SBATCH --gres=gpu:4
+#SBATCH --mem=0
+#SBATCH --time=1-0:0:0
+#SBATCH --partition=ga100
+
+ml WarpTools/2.0.0
+source activate warp
+
+WarpTools ts_reconstruct --settings warp_tiltseries.settings --angpix 10 --halfmap_frames --dont_invert
+
+```
+Congratulations warp is done. You can now browse your tomograms and check they are ok ahead of denoising. 
+
+#Denoising!
+
+Make even list and odd list wish csh command
+
+```
+#!/bin/csh -f
+  
+set input_folder = "yourpathname/warp_tiltseries/reconstruction"
+set even_files = ($input_folder/even/*.mrc)
+set odd_files = ($input_folder/odd/*.mrc)
+if ( $#even_files == 0 ) then
+   echo "No even files found in $input_folder"
+   exit 1
+endif ($#even_files =! 0 )
+    set even_list = "even_list.txt"
+    set odd_list = "odd_list.txt"
+    echo "Making even and odd files"
+endif
+foreach even_file ($even_files)
+   if ( -e $even_file ) then
+       set base_name = `basename $even_file .mrc`
+       foreach even_file ($even_files)
+            echo '"'$even_file'"', >> $even_list
+       end
+foreach odd_file ($odd_files)
+   if ( -e $odd_file ) then
+       set base_name = `basename $odd_file .mrc`
+       foreach odd_file ($odd_files)
+            echo '"'$odd_file'"', >> $odd_list
+   endif
+end
+```
+
+#CRYOCARE
+make a file called train_data_config.json 
+Use the csh output to copy and paste the path names of 3 tomograms you want to train on. These should have a variety of your ROI's and cover the range of defocus. 
+```
+{
+    "even": [
+        "copy and paste path from the output of the csh/reconstruction/even/High_mag_L12_P1_10.00Apx.mrc",
+        "________/reconstruction/even/High_mag_L12_P1_2_10.00Apx.mrc",
+        "_________/reconstruction/even/High_mag_L12_P1_3_10.00Apx.mrc"
+    ],
+    "odd": [
+        "_______/reconstruction/odd/High_mag_L12_P1_10.00Apx.mrc",
+        "________/reconstruction/odd/High_mag_L12_P1_2_10.00Apx.mrc",
+        "________/reconstruction/odd/High_mag_L12_P1_3_10.00Apx.mrc"
+    ],
+    "patch_shape": [
+        72,
+        72,
+        72
+    ],
+    "num_slices": 1200,
+    "split": 0.9,
+    "tilt_axis": "Y",
+    "n_normalization_samples": 120,
+    "path": "yourpath/warp_tiltseries/reconstruction",
+    "overwrite": "True"
+}
+~
+```    
+Make sbatch command to run this i.e. cryocare_train_prep
+
+```
+#!/bin/bash
+#SBATCH --partition=ga100
+#SBATCH --job-name=cryocare
+#SBATCH --ntasks=1
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=64
+#SBATCH --error=warp_err.log
+#SBATCH --output=warp_out.log
+#SBATCH --gres=gpu:1
+#SBATCH --mem=0
+#SBATCH --time=1-0:0:0
+#SBATCH --partition=ga100
+
+ml cryoCARE
+source activate cryoCARE-0.3
+cryoCARE_extract_train_data.py --conf train_data_config.json
+```
+                                          
+Make a file called train_config.json 
+
+```
+
+{
+    "train_data":"yourpath/warp_tiltseries/reconstruction",
+    "epochs": 100,
+    "steps_per_epoch": 200,
+    "batch_size": 16,
+    "unet_kern_size": 3,
+    "unet_n_depth": 3,
+    "unet_n_first": 16,
+    "learning_rate": 0.0004,
+    "model_name": "denoising_model",
+    "path": "yourpath/WARP/warp_tiltseries/reconstruction",
+    "overwrite": "True",
+    "gpu_id": [
+        0
+    ]
+}
+
+#!/bin/bash
+#SBATCH --partition=ga100
+#SBATCH --job-name=cryocare
+#SBATCH --ntasks=1
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=256
+#SBATCH --error=warp_err.log
+#SBATCH --output=warp_out.log
+#SBATCH --gres=gpu:4
+#SBATCH --mem=0
+#SBATCH --time=1-0:0:0
+#SBATCH --partition=ga100
+
+ml cryoCARE
+source activate cryoCARE-0.3
+cryoCARE_train.py --conf train_config.json
+*add gpu flag if want to train on >1 gpus
+```
+This will take some time. Once its complete you can run a prediction on the tomograms you trained your model on to check the success. 
+
+Make a file called predict_config.json and run on your training data 
+```
+{
+    "path": "yourpath/reconstruction/denoising_model.tar.gz",
+    "even": [
+        "yourpath/reconstruction/even/test_High_mag_L17_P1_2_10.00Apx.mrc"
+        ],
+    "odd": [
+        "yourpath/reconstruction/odd/test_High_mag_L17_P1_2_10.00Apx.mrc"
+        ],
+    "n_tiles": [
+        2,
+        2,
+        2
+    ],
+    "output": "yourpath/reconstruction/cryocare_output",
+    "overwrite": "True",
+    "gpu_id": [
+        0
+    ]
+}
+```
+
+Make sbatch file cryocare_predict 
+```
+#!/bin/bash
+#SBATCH --partition=ga100
+#SBATCH --job-name=cryocare
+#SBATCH --ntasks=1
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=64
+#SBATCH --error=warp_err.log
+#SBATCH --output=warp_out.log
+#SBATCH --gres=gpu:1
+#SBATCH --mem=0
+#SBATCH --time=1-0:0:0
+#SBATCH --partition=ga100
+
+ml cryoCARE
+source activate cryoCARE-0.3
+cryoCARE_predict.py --conf predict_config.json
+
+```
+This takes a few minutes per tomogram. 
+If looks good repeat cryocare_predict command with a new cryocare_predict.json with all tomos.
+
+If you want to push your denoising even futher... 
+
+Next step is isonet. Which fills in the missing wedge. 
+
+#ISONET
+Best used with gui, but can make do with sbatch commands. 
+
+Mkdir called isonet 
+Inside mkdir called tomos 
+Ln tomos want to train on 
+
+```
+ml IsoNet 
+source activate isonet 
+
+isonet.py prepare_star tomo_folder --pixel_size 10
+```
+
+Make mask. Telling isonet where to look for features. i.e. ignore top and bottom 20% of Z.  
+```
+isonet.py make_mask tomograms.star –z_crop 0.2
+```
+
+Sanity check - look at output in mask. If it looks right...
+
+Extract into subtomos 
+
+```
+isonet.py prepare_subtomo_star folder_name [--output_star]
+```
+
+Now ready to train. Need gpu 
+
+```
+sbatch isonet_command 
+
+#!/bin/bash
+#SBATCH --partition=ga100
+#SBATCH --job-name=IsoNet
+#SBATCH --ntasks=1
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=256
+#SBATCH --error=isonet_err.log
+#SBATCH --output=isonet_out.log
+#SBATCH --gres=gpu:4
+#SBATCH --mem=0
+#SBATCH --time=1-0:0:0
+#SBATCH --partition=ga100
+
+ml IsoNet
+source activate isonet
+isonet.py refine subtomo.star --iterations 30 --noise_level 0.1,0.2 --noise_start_iter 11,21
+```
+This takes ages... 
+
+output = results directory. Inside that there is your model. There will be 30 in this case. And 30 iterations of each sub tomo. 
+
+Open all sub tomos of one tomogram and look for a feature in iteration 0. 
+
+Open all iterations of that subtomo to see what isonet does with each iteration. 
+
+Find favourite iteration = this is your trained model. Lets do some predictions! 
+
+Make a new star file with tomograms you want to predict. Suggest start with the training ones to check visually, in this case tomograms.star already exists. So just run below command. 
+
+```
+#!/bin/bash
+#SBATCH --partition=ga100
+#SBATCH --job-name=IsoNet
+#SBATCH --ntasks=1
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=256
+#SBATCH --error=isonet_err.log
+#SBATCH --output=isonet_out.log
+#SBATCH --gres=gpu:4
+#SBATCH --mem=0
+#SBATCH --time=1-0:0:0
+#SBATCH --partition=ga100
+
+ml IsoNet
+source activate isonet
+isonet.py predict tomograms.star yourpath/isonet/results/model_iter30.h5 --gpuID 0,1,2,3
+```
+
+output = corrected_tomos 
+if happy repeat above with all tomos i.e. make tomogram.star with all tomograms using 
+```
+isonet.py prepare_star tomo_folder --pixel_size 10
+```
+where tomo_folder contains all your tomograms 
+
+success! 
+
+If you want to segment membranes… 
+
+#Membrain Time
+```
+#!/bin/bash
+#SBATCH --partition=ga100
+#SBATCH --job-name=membrain
+#SBATCH --ntasks=1
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=256
+#SBATCH --error=isonet_err.log
+#SBATCH --output=isonet_out.log
+#SBATCH --gres=gpu:4
+#SBATCH --mem=0
+#SBATCH --time=1-0:0:0
+#SBATCH --partition=ga100
+
+ml membrain-seg
+source activate Membrane_Venv
+
+membrain segment --tomogram-path /pathtoyourdenoisedtomo --ckpt-path /camp/apps/misc/stp/sbstp/membrain-seg/model/MemBrain_seg_v10_alpha.ckpt --store-connected-components
+```
+
+
+
 
