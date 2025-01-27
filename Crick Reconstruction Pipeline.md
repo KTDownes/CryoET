@@ -1,4 +1,4 @@
-Welcome to my cryoET reconstruction pipeline! 
+Hello and welcome to my cryoET reconstruction pipeline! 
 
 # For fast (ish) and beautiful (ish) tomograms using OnDemand
 Request X GPU
