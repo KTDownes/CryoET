@@ -151,7 +151,7 @@ Use imod to look at your beautiful quick tomograms. Best assessed with the XYZ v
 
 Select your tomograms which have your feature of interest in them for denoising. 
 
-# For slow (ish) and beautiful denoised tomograms  
+# For slow (ish) and beautiful denoised tomograms using nemo 
 
 ## ITS WARP TIME
 Create a new directory and inside this make two directories, one called frames and the other called original_mdocs, cp your frames and mdocs of your chosen tomograms to the indicated directories. 
