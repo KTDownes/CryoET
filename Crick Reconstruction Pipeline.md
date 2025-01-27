@@ -484,7 +484,7 @@ WarpTools ts_reconstruct --settings warp_tiltseries.settings --angpix 10 --halfm
 ```
 Congratulations warp is done. You can now browse your tomograms and check they are ok ahead of denoising. 
 
-#Denoising!
+# Denoising!
 
 Make even list and odd list wish csh command
 
@@ -517,7 +517,7 @@ foreach odd_file ($odd_files)
 end
 ```
 
-#CRYOCARE
+# CRYOCARE
 make a file called train_data_config.json 
 Use the csh output to copy and paste the path names of 3 tomograms you want to train on. These should have a variety of your ROI's and cover the range of defocus. 
 ```
@@ -658,7 +658,7 @@ If you want to push your denoising even futher...
 
 Next step is isonet. Which fills in the missing wedge. 
 
-#ISONET
+# ISONET
 Best used with gui, but can make do with sbatch commands. 
 
 Mkdir called isonet 
@@ -749,7 +749,7 @@ success!
 
 If you want to segment membranes… 
 
-#Membrain Time
+# Membrain Time
 ```
 #!/bin/bash
 #SBATCH --partition=ga100
