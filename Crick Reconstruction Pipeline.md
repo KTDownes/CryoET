@@ -1,7 +1,7 @@
 Hello and welcome to my cryoET reconstruction pipeline! 
 
 # For fast (ish) and beautiful (ish) tomograms using OnDemand
-Request X GPU
+Request X GPU  
 I've only tried this with Fluxbox (Xfce is much better for your eyes). 
 
 *Whilst OnDemand is down you can ssh into nemo and then submit sbatch commands. I haven't done this for AreTomo but in theory it should work. I demonstrate how sbatch commands work in the warp section*
