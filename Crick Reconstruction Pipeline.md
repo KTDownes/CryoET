@@ -328,7 +328,6 @@ I called mine Motioncorr_ctf
 #SBATCH --gres=gpu:4
 #SBATCH --mem=0
 #SBATCH --time=1-0:0:0
-#SBATCH --partition=ga100
 
 ml WarpTools/2.0.0
 source activate warp
@@ -379,7 +378,6 @@ Stack
 #SBATCH --gres=gpu:4
 #SBATCH --mem=0
 #SBATCH --time=1-0:0:0
-#SBATCH --partition=ga100
 
 ml WarpTools/2.0.0
 source activate warp
@@ -402,7 +400,6 @@ Warp_aretomo
 #SBATCH --gres=gpu:4
 #SBATCH --mem=0
 #SBATCH --time=1-0:0:0
-#SBATCH --partition=ga100
 
 ml WarpTools/2.0.0
 source activate warp
@@ -423,7 +420,6 @@ Warp_hand
 #SBATCH --gres=gpu:1
 #SBATCH --mem=0
 #SBATCH --time=1-0:0:0
-#SBATCH --partition=ga100
 
 ml WarpTools/2.0.0
 source activate warp
@@ -441,7 +437,6 @@ Warp_flip
 #SBATCH --gres=gpu:1
 #SBATCH --mem=0
 #SBATCH --time=1-0:0:0
-#SBATCH --partition=ga100
 
 ml WarpTools/2.0.0
 source activate warp
@@ -461,7 +456,6 @@ Warp_ctf
 #SBATCH --gres=gpu:4
 #SBATCH --mem=0
 #SBATCH --time=1-0:0:0
-#SBATCH --partition=ga100
 
 ml WarpTools/2.0.0
 source activate warp
@@ -480,7 +474,6 @@ Warp_reconstruct
 #SBATCH --gres=gpu:4
 #SBATCH --mem=0
 #SBATCH --time=1-0:0:0
-#SBATCH --partition=ga100
 
 ml WarpTools/2.0.0
 source activate warp
@@ -566,7 +559,6 @@ Make sbatch command to run this i.e. cryocare_train_prep
 #SBATCH --gres=gpu:1
 #SBATCH --mem=0
 #SBATCH --time=1-0:0:0
-#SBATCH --partition=ga100
 
 ml cryoCARE
 source activate cryoCARE-0.3
@@ -605,7 +597,6 @@ Make a file called train_config.json
 #SBATCH --gres=gpu:4
 #SBATCH --mem=0
 #SBATCH --time=1-0:0:0
-#SBATCH --partition=ga100
 
 ml cryoCARE
 source activate cryoCARE-0.3
@@ -650,7 +641,6 @@ Make sbatch file cryocare_predict
 #SBATCH --gres=gpu:1
 #SBATCH --mem=0
 #SBATCH --time=1-0:0:0
-#SBATCH --partition=ga100
 
 ml cryoCARE
 source activate cryoCARE-0.3
@@ -707,7 +697,6 @@ sbatch isonet_command
 #SBATCH --gres=gpu:4
 #SBATCH --mem=0
 #SBATCH --time=1-0:0:0
-#SBATCH --partition=ga100
 
 ml IsoNet
 source activate isonet
@@ -737,7 +726,6 @@ Make a new star file with tomograms you want to predict. Suggest start with the 
 #SBATCH --gres=gpu:4
 #SBATCH --mem=0
 #SBATCH --time=1-0:0:0
-#SBATCH --partition=ga100
 
 ml IsoNet
 source activate isonet
@@ -768,7 +756,6 @@ If you want to segment membranes…
 #SBATCH --gres=gpu:4
 #SBATCH --mem=0
 #SBATCH --time=1-0:0:0
-#SBATCH --partition=ga100
 
 ml membrain-seg
 source activate Membrane_Venv
