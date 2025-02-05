@@ -1,13 +1,13 @@
 Hello and welcome to my cryoET reconstruction pipeline! 
 # Table of Contents  
 - [For fast (ish) and beautiful (ish) tomograms using OnDemand](https://github.com/KTDownes/CryoET/blob/main/Crick%20Reconstruction%20Pipeline.md#for-fast-ish-and-beautiful-ish-tomograms-using-ondemand)
-- [For fast (ish) and beautiful (ish) tomograms using sbatch nemo](https://github.com/KTDownes/CryoET/edit/main/Crick%20Reconstruction%20Pipeline.md#for-fast-ish-and-beautiful-ish-tomograms-using-sbatch-nemo)
-- [For slow (ish) and beautiful denoised tomograms using nemo](https://github.com/KTDownes/CryoET/edit/main/Crick%20Reconstruction%20Pipeline.md#for-slow-ish-and-beautiful-denoised-tomograms-using-nemo)  
-  - [ITS WARP TIME](https://github.com/KTDownes/CryoET/edit/main/Crick%20Reconstruction%20Pipeline.md#its-warp-time)  
-  - [Denoising!](https://github.com/KTDownes/CryoET/edit/main/Crick%20Reconstruction%20Pipeline.md#denoising)  
-    - [CRYOCARE](https://github.com/KTDownes/CryoET/edit/main/Crick%20Reconstruction%20Pipeline.md#cryocare)  
-    - [ISONET](https://github.com/KTDownes/CryoET/edit/main/Crick%20Reconstruction%20Pipeline.md#isonet)   
-- [Membrain Time](https://github.com/KTDownes/CryoET/edit/main/Crick%20Reconstruction%20Pipeline.md#membrain-time)
+- [For fast (ish) and beautiful (ish) tomograms using sbatch nemo](https://github.com/KTDownes/CryoET/blob/main/Crick%20Reconstruction%20Pipeline.md#for-fast-ish-and-beautiful-ish-tomograms-using-sbatch-nemo)
+- [For slow (ish) and beautiful denoised tomograms using nemo](https://github.com/KTDownes/CryoET/blob/main/Crick%20Reconstruction%20Pipeline.md#for-slow-ish-and-beautiful-denoised-tomograms-using-nemo)  
+  - [ITS WARP TIME](https://github.com/KTDownes/CryoET/blob/main/Crick%20Reconstruction%20Pipeline.md#its-warp-time)  
+  - [Denoising!](https://github.com/KTDownes/CryoET/blob/main/Crick%20Reconstruction%20Pipeline.md#denoising)  
+    - [CRYOCARE](https://github.com/KTDownes/CryoET/blob/main/Crick%20Reconstruction%20Pipeline.md#cryocare)  
+    - [ISONET](https://github.com/KTDownes/CryoET/blob/main/Crick%20Reconstruction%20Pipeline.md#isonet)   
+- [Membrain Time](https://github.com/KTDownes/CryoET/blob/main/Crick%20Reconstruction%20Pipeline.md#membrain-time)
 
 # For fast (ish) and beautiful (ish) tomograms using OnDemand
 Request X GPU  
