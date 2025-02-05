@@ -1,6 +1,17 @@
 Hello and welcome to my cryoET reconstruction pipeline! 
+# Table of Contents  
+- [For fast (ish) and beautiful (ish) tomograms using OnDemand](#Header_1)  
+- [For fast (ish) and beautiful (ish) tomograms using sbatch nemo](#Header_2)  
+- [For slow (ish) and beautiful denoised tomograms using nemo](#Header_3)  
+  - [ITS WARP TIME](#Header_4)  
+  - [Denoising!](#Header_5)  
+    - [CRYOCARE](#Header_6)  
+    - [ISONET](#Header_7)   
+- [Membrain Time](#Header_8)  
 
-# For fast (ish) and beautiful (ish) tomograms using OnDemand
+
+
+# <a name="Header_1">For fast (ish) and beautiful (ish) tomograms using OnDemand</a>
 Request X GPU  
 I've only tried this with Fluxbox (Xfce is much better for your eyes). 
 
@@ -151,7 +162,7 @@ Use imod to look at your beautiful quick tomograms. Best assessed with the XYZ v
 
 Select your tomograms which have your feature of interest in them for denoising. 
 
-# For fast (ish) and beautiful (ish) tomograms using sbatch nemo 
+# <a name="Header_2">For fast (ish) and beautiful (ish) tomograms using sbatch nemo</a>
 Converting the above OnDemand commands into sbatch :) 
 
 Partitions we use: 
@@ -349,10 +360,8 @@ done
 *Whilst OnDemand and the vis nodes are down I visualise my tomograms on my laptops version of imod. Accessing the files on nemo via the server. If the server is behaving this is a fast enough work around. If it is not working... I am sad* 
 
 
-
-# For slow (ish) and beautiful denoised tomograms using nemo 
-
-## ITS WARP TIME
+# <a name="Header_3">For slow (ish) and beautiful denoised tomograms using nemo </a>
+## <a name="Header_4">ITS WARP TIME </a>
 Create a new directory and inside this make two directories, one called frames and the other called original_mdocs, cp your frames and mdocs of your chosen tomograms to the indicated directories. 
 Inside original_mdocs create a python script called adjust_angles: 
 
@@ -682,7 +691,7 @@ WarpTools ts_reconstruct --settings warp_tiltseries.settings --angpix 10 --halfm
 ```
 Congratulations warp is done. You can now browse your tomograms and check they are ok ahead of denoising. 
 
-## Denoising!
+## <a name="Header_5">Denoising! </a>
 
 Make even list and odd list wish csh command
 
@@ -714,8 +723,8 @@ foreach odd_file ($odd_files)
    endif
 end
 ```
+### <a name="Header_6">CRYOCARE </a>
 
-### CRYOCARE
 make a file called train_data_config.json 
 Use the csh output to copy and paste the path names of 3 tomograms you want to train on. These should have a variety of your ROI's and cover the range of defocus. 
 ```
@@ -853,7 +862,7 @@ If you want to push your denoising even futher...
 
 Next step is isonet. Which fills in the missing wedge. 
 
-### ISONET
+### <a name="Header_7">ISONET </a>
 Best used with gui, but can make do with sbatch commands. 
 
 Mkdir called isonet 
@@ -942,7 +951,7 @@ success!
 
 If you want to segment membranes… 
 
-# Membrain Time
+# <a name="Header_8">Membrain Time </a>
 ```
 #!/bin/bash
 #SBATCH --partition=ga100
