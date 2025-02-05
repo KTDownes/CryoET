@@ -4,7 +4,7 @@ Hello and welcome to my cryoET reconstruction pipeline!
 Request X GPU  
 I've only tried this with Fluxbox (Xfce is much better for your eyes). 
 
-*Whilst OnDemand is down you can ssh into nemo and then submit sbatch commands. See below section: 
+*Whilst OnDemand is down you can ssh into nemo and then submit sbatch commands. See below section:* 
 
 cd or mkdir a processing directory for your tomograms. Inside cp your mdocs and fractions.mrc. Inside this directory make a directory called motioncorr.
 ```
@@ -154,7 +154,7 @@ Select your tomograms which have your feature of interest in them for denoising.
 # For fast (ish) and beautiful (ish) tomograms using sbatch nemo 
 Converting the above OnDemand commands into sbatch :) 
 
-*1. Extract tilts from mdocs
+**1. Extract tilts from mdocs**
 ```
 #!/bin/bash
 #SBATCH --partition=ga100
@@ -199,7 +199,7 @@ for mdoc_file in "${mdoc_files[@]}"; do
 done
 ~                                                                                                                                                                                                                      
 ```
-*2. Imod motion correction
+**2. Imod motion correction**
 ```
 #!/bin/bash
 #SBATCH --partition=ga100
@@ -258,7 +258,7 @@ for mdoc_file in "${mdoc_files[@]}"; do
 done
 ~
 ```
-*3. Extract tilts from motion corrected mrcs 
+**3. Extract tilts from motion corrected mrcs**
 ```
 #!/bin/bash
 #SBATCH --partition=ga100
@@ -299,8 +299,9 @@ for mdoc_file in "${mdoc_files[@]}"; do
        echo "File does not exist: $mdoc_file"
    fi
 done
-~                                                                                                                                                                                                         ```
-*4. Run AreTomo align and reconstruct
+~                                                                                                                                                                                                         
+```
+**4. Run AreTomo align and reconstruct**
 ```
 #!/bin/bash
 #SBATCH --partition=ga100
@@ -337,6 +338,8 @@ for mrc_file in "${mrc_files[@]}"; do
    fi
 done
 ```
+
+*Whilst OnDemand and the vis nodes are down I visualise my tomograms on my laptops version of imod. Accessing the files on nemo via the server. If the server is behaving this is a fast enough work around. If it is not working... I am sad* 
 
 
 
