@@ -154,6 +154,13 @@ Select your tomograms which have your feature of interest in them for denoising.
 # For fast (ish) and beautiful (ish) tomograms using sbatch nemo 
 Converting the above OnDemand commands into sbatch :) 
 
+Partitions we use: 
+ga100, has 4 GPUs, 256 CPUs
+gl140, has 4 GPUs, 64 CPUs
+
+You can use either partition, just change the --partition line and add a --reservation=gl40 line to use gl40. 
+If you are requesting n GPUs, request n/4 CPU.
+
 **1. Extract tilts from mdocs**
 ```
 #!/bin/bash
@@ -161,10 +168,10 @@ Converting the above OnDemand commands into sbatch :)
 #SBATCH --job-name=tilts
 #SBATCH --ntasks=1
 #SBATCH --nodes=1
-#SBATCH --cpus-per-task=256
+#SBATCH --cpus-per-task=64
 #SBATCH --error=tlt_err.log
 #SBATCH --output=tlt_out.log
-#SBATCH --gres=gpu:4
+#SBATCH --gres=gpu:1
 #SBATCH --mem=0
 #SBATCH --time=1-0:0:0
 
