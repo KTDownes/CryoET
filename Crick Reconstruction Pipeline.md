@@ -4,7 +4,7 @@ Hello and welcome to my cryoET reconstruction pipeline!
 Request X GPU  
 I've only tried this with Fluxbox (Xfce is much better for your eyes). 
 
-*Whilst OnDemand is down you can ssh into nemo and then submit sbatch commands. I haven't done this for AreTomo but in theory it should work. I demonstrate how sbatch commands work in the warp section*
+*Whilst OnDemand is down you can ssh into nemo and then submit sbatch commands. See below section: 
 
 cd or mkdir a processing directory for your tomograms. Inside cp your mdocs and fractions.mrc. Inside this directory make a directory called motioncorr.
 ```
@@ -150,6 +150,195 @@ csh -f AreTomo_rec.csh
 Use imod to look at your beautiful quick tomograms. Best assessed with the XYZ viewer and a cup of tea. 
 
 Select your tomograms which have your feature of interest in them for denoising. 
+
+# For fast (ish) and beautiful (ish) tomograms using sbatch nemo 
+Converting the above OnDemand commands into sbatch :) 
+
+*1. Extract tilts from mdocs
+```
+#!/bin/bash
+#SBATCH --partition=ga100
+#SBATCH --job-name=tilts
+#SBATCH --ntasks=1
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=256
+#SBATCH --error=tlt_err.log
+#SBATCH --output=tlt_out.log
+#SBATCH --gres=gpu:4
+#SBATCH --mem=0
+#SBATCH --time=1-0:0:0
+
+ml imod
+source $IMOD_DIR/IMOD-linux_vis.sh
+input_folder="."
+mdoc_files=($input_folder/*.mdoc)
+
+# Check if there are any .mdoc files
+if [ ${#mdoc_files[@]} -eq 0 ]; then
+   echo "No .mdoc files found in $input_folder"
+   exit 1
+fi
+
+# Loop through each mdoc file
+for mdoc_file in "${mdoc_files[@]}"; do
+   if [ -e "$mdoc_file" ]; then
+       base_name=$(basename "$mdoc_file" .mdoc)
+       temp_list_file="${base_name}_list.txt"
+
+       # Create the list file (though the script doesn't actually use this file, just creates it)
+       echo "Creating list file: $temp_list_file"
+
+       # Run the extracttilts command
+       extracttilts -other "$mdoc_file" -output "${base_name}.rawtlt" -tilts
+
+       # Remove the temporary list file
+       rm "$temp_list_file"
+   else
+       echo "File does not exist: $mdoc_file"
+   fi
+done
+~                                                                                                                                                                                                                      
+```
+*2. Imod motion correction
+```
+#!/bin/bash
+#SBATCH --partition=ga100
+#SBATCH --job-name=motioncorr
+#SBATCH --ntasks=1
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=256
+#SBATCH --error=motioncorr_err.log
+#SBATCH --output=motioncorr.log
+#SBATCH --gres=gpu:4
+#SBATCH --mem=0
+#SBATCH --time=1-0:0:0
+
+ml imod
+source $IMOD_DIR/IMOD-linux_vis.sh
+input_folder="."
+mdoc_files=($input_folder/*.mdoc)
+
+# Check if there are any .mdoc files
+if [ ${#mdoc_files[@]} -eq 0 ]; then
+   echo "No .mdoc files found in $input_folder"
+   exit 1
+fi
+
+# Loop through each mdoc file
+for mdoc_file in "${mdoc_files[@]}"; do
+   if [ -e "$mdoc_file" ]; then
+       base_name=$(basename "$mdoc_file" .mdoc)
+       eer_files=($input_folder/${base_name}_0*fractions.mrc)
+
+       # Check if there are any fraction files
+       if [ ${#eer_files[@]} -eq 0 ]; then
+           echo "No fraction files found for $mdoc_file"
+           continue
+       fi
+
+       # Create the temporary list file
+       temp_list_file="${base_name}_fraction_list.txt"
+       echo "Creating list file: $temp_list_file"
+       > "$temp_list_file" # Clear the file before appending
+
+       # Add all the fraction files to the list file
+       for eer_file in "${eer_files[@]}"; do
+           echo "$eer_file" >> "$temp_list_file"
+       done
+
+       # Process the fraction files
+       echo "Processing all fraction files for: $base_name"
+       alignframes -evenodd 2  -list "$temp_list_file" -refine 3 -volt 300 -gpu 3 -reorder 1 -pixel 2.24 -output "./motioncorr/${base_name}_aligned.mrc" -tilt "${base_name}.rawtlt"
+
+       # Remove the temporary list file
+       rm "$temp_list_file"
+   else
+       echo "File does not exist: $mdoc_file"
+   fi
+done
+~
+```
+*3. Extract tilts from motion corrected mrcs 
+```
+#!/bin/bash
+#SBATCH --partition=ga100
+#SBATCH --job-name=tilts
+#SBATCH --ntasks=1
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=64
+#SBATCH --error=tlt_err.log
+#SBATCH --output=tlt_out.log
+#SBATCH --gres=gpu:1
+#SBATCH --mem=0
+#SBATCH --time=1-0:0:0
+
+input_folder="."
+mdoc_files=($input_folder/*.mrc)
+
+# Check if there are any .mrc files
+if [ ${#mdoc_files[@]} -eq 0 ]; then
+   echo "No .mrc files found in $input_folder"
+   exit 1
+fi
+
+# Loop through each mrc file
+for mdoc_file in "${mdoc_files[@]}"; do
+   if [ -e "$mdoc_file" ]; then
+       base_name=$(basename "$mdoc_file" .mrc)
+       temp_list_file="${base_name}_list.txt"
+
+       # Create the list file (though the script doesn't actually use this file, just creates it)
+       echo "Creating list file: $temp_list_file"
+
+       # Run the extracttilts command
+       extracttilts -input "$mdoc_file" -output "${base_name}.rawtlt" -tilts
+
+       # Remove the temporary list file
+       rm "$temp_list_file"
+   else
+       echo "File does not exist: $mdoc_file"
+   fi
+done
+~                                                                                                                                                                                                         ```
+*4. Run AreTomo align and reconstruct
+```
+#!/bin/bash
+#SBATCH --partition=ga100
+#SBATCH --job-name=AreTomo
+#SBATCH --ntasks=1
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=256
+#SBATCH --error=AT_err.log
+#SBATCH --output=AT_out.log
+#SBATCH --gres=gpu:4
+#SBATCH --mem=0
+#SBATCH --time=1-0:0:0
+
+ml AreTomo
+
+input_folder="."
+mrc_files=($input_folder/*aligned.mrc)
+
+# Check if there are any .mrc files
+if [ ${#mrc_files[@]} -eq 0 ]; then
+   echo "No .mrc files found in $input_folder"
+   exit 1
+fi
+
+# Loop through each mrc file
+for mrc_file in "${mrc_files[@]}"; do
+   if [ -e "$mrc_file" ]; then
+       base_name=$(basename "$mrc_file" .mrc)
+
+       # Run the AreTomo command
+       AreTomo -InMrc "$mrc_file" -OutMrc ./output/"${base_name}_rec_tilt.mrc" -PixSize 2.24  -AngFile "${base_name}.rawtlt" -OutBin 6 -FlipVol 1 -TiltCor 1 -VolZ 2000 -AlnZ 1000
+   else
+       echo "File does not exist: $mrc_file"
+   fi
+done
+```
+
+
 
 # For slow (ish) and beautiful denoised tomograms using nemo 
 
