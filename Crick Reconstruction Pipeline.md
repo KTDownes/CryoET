@@ -13,7 +13,7 @@ Hello and welcome to my cryoET reconstruction pipeline!
 Request X GPU  
 I've only tried this with Fluxbox (Xfce is much better for your eyes). 
 
-*Whilst OnDemand is down you can ssh into nemo and then submit sbatch commands. See below section:* 
+*Whilst OnDemand is down you can ssh into nemo and then submit sbatch commands. [See below section](https://github.com/KTDownes/CryoET/blob/main/Crick%20Reconstruction%20Pipeline.md#for-fast-ish-and-beautiful-ish-tomograms-using-sbatch-nemo)* 
 
 cd or mkdir a processing directory for your tomograms. Inside cp your mdocs and fractions.mrc. Inside this directory make a directory called motioncorr.
 ```
@@ -164,10 +164,15 @@ Select your tomograms which have your feature of interest in them for denoising.
 Converting the above OnDemand commands into sbatch :) 
 
 Partitions we use: 
+| Partition     | GPU           | CPU   | CPU per GPU |
+| :-------------: | :-------------:| :-----:| :-----------:|
+| ga100         | 4             | 256   | 64          |
+| gl40          | 4             | 64    | 16          |
+
 ga100, has 4 GPUs, 256 CPUs
 gl140, has 4 GPUs, 64 CPUs
 
-You can use either partition, just change the --partition line and add a --reservation=gl40 line to use gl40. 
+You can use either partition, just change the --partition line and add a --reservation=gl40 line to use gl40.  
 If you are requesting n GPUs, request n/4 CPU.
 
 **1. Extract tilts from mdocs**
