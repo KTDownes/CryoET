@@ -392,6 +392,8 @@ for mdoc_file in mdoc_files:
 ```
 This will output mdoc files called test_mdocs. Move these to a directory called mdocs.
 
+If you want to manually edit your tilts you can use the following script...
+
 In this directory create the following python file - clean_mdoc.py. 
 In this directory create an excel file with three columns containing the mdoc file name, the first good tilt number and the last good tilt number. clean_mdoc.py will remove the tilts outside of this range for you. 
 
@@ -571,7 +573,7 @@ Once finished the below jobs can be run in turn. Those requiring sbatch commands
   --mdocs mdocs \
   --frameseries warp_frameseries \
   --tilt_exposure 3.5 \
-  --min_intensity 0.1 \
+  --min_intensity 0.1 \ #this command removes tilts by filtering by exposure
   --dont_invert \
   --output tomostar/
 ```
