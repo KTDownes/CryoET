@@ -13,3 +13,5 @@ foreach file (`cat $file_list`)
     # Create a symbolic link to the current directory
     ln -s $source_directory/$file .
 end
+
+```
