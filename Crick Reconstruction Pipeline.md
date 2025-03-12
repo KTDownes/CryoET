@@ -364,8 +364,12 @@ done
 
 
 # For slow (ish) and beautiful denoised tomograms using nemo
+
 ## ITS WARP TIME 
+### Arranging your data 
 Create a new directory and inside this make two directories, one called frames and the other called original_mdocs, cp your frames and mdocs of your chosen tomograms to the indicated directories. 
+
+#### Editting mdocs so they aren't skewed
 Inside original_mdocs create a python script called adjust_angles: 
 
 ```
@@ -392,6 +396,9 @@ for mdoc_file in mdoc_files:
 ```
 This will output mdoc files called test_mdocs. Move these to a directory called mdocs.
 
+### Removing bad tilts
+Now this pipeline is a bit like a "choose your own adventure" game...
+#### Removing bad tilts manually
 If you want to manually edit your tilts you can use the following script...
 
 In this directory create the following python file - clean_mdoc.py. 
@@ -498,13 +505,12 @@ if __name__ == '__main__':
 ```
 Lets do some tidying up. rm mdocs and mv mdoc_mod to mdoc. 
 
-Now are mdocs are all happy and correct and ready for warp! 
+Now are mdocs are all happy and correct and ready for warp!
+
 Some warp commands can be run just from ssh-ing into nemo. However some need GPU and thus must be submitted as sbatch commands until ondemand is working again. 
 
-**Examples of sbatch commands**
-
+### Creating WARP settings
 First step:
-
 ```
 ml WarpTools/2.0.0
 source activate warp
@@ -527,20 +533,23 @@ WarpTools create_settings \
 --tomo_dimensions 3710x3838x2000 #change to suit your data
 ```
 Creates all the settings you want. 
+
+### Motion correction
 Next is your 1st sbatch command: 
 I called mine Motioncorr_ctf
 ```
 #!/bin/bash
-#SBATCH --partition=ga100
-#SBATCH --job-name=WARP
+#SBATCH --partition=gl40
+#SBATCH --job-name=WARP_Motion
 #SBATCH --ntasks=1
 #SBATCH --nodes=1
-#SBATCH --cpus-per-task=256
-#SBATCH --error=warp_err.log
-#SBATCH --output=warp_out.log
+#SBATCH --cpus-per-task=64
+#SBATCH --error=motion_err.log
+#SBATCH --output=motion_out.log
 #SBATCH --gres=gpu:4
 #SBATCH --mem=0
 #SBATCH --time=1-0:0:0
+#SBATCH --reservation=gl40
 
 ml WarpTools/2.0.0
 source activate warp
@@ -556,41 +565,48 @@ source activate warp
   --out_averages \
   --out_average_halves \
   --perdevice 2 \
-  --device_list 0
+  --device_list 4
 ```
 To run sbatch 
-sbatch motioncorr_ctf 
+sbatch Motioncorr_ctf 
 “job submitted” 
-Squeue -p ga100
+Squeue -p gl40 shows you the state of the queue. squeue -u yourcrickname shows you your jobs. 
 
-You can check the process by looking at the warp_err.log and warp_out.log
+You can check the process by looking at the motion_err.log and motion_out.log
 
 Once finished the below jobs can be run in turn. Those requiring sbatch commands can be run in the same manner i.e. sbatch sbatch_file_name. 
 
+### Import 
 ```
 # TS Import
   WarpTools ts_import \
   --mdocs mdocs \
   --frameseries warp_frameseries \
   --tilt_exposure 3.5 \
-  --min_intensity 0.1 \ #this command removes tilts by filtering by exposure
   --dont_invert \
   --output tomostar/
+```
+#### Automatic Tilt removal
+Choose your own adventure is back!
+Add the below command to the import. This filters tilts by exposure. 0.7 is good for ice. 
+```
+  --min_intensity 0.7 \
 ```
 
 ``` 
 Stack 
 #!/bin/bash
-#SBATCH --partition=ga100
+#SBATCH --partition=gl40
 #SBATCH --job-name=WARP
 #SBATCH --ntasks=1
 #SBATCH --nodes=1
-#SBATCH --cpus-per-task=256
-#SBATCH --error=warp_err.log
-#SBATCH --output=warp_out.log
+#SBATCH --cpus-per-task=64
+#SBATCH --error=stack_err.log
+#SBATCH --output=stack_out.log
 #SBATCH --gres=gpu:4
 #SBATCH --mem=0
 #SBATCH --time=1-0:0:0
+#SBATCH --reservation=gl40
 
 ml WarpTools/2.0.0
 source activate warp
@@ -598,100 +614,111 @@ WarpTools ts_stack \
   --settings warp_tiltseries.settings \
   --angpix 10
 ```
-
+### Alignment
 ```
 Warp_aretomo
 
 #!/bin/bash
-#SBATCH --partition=ga100
+#SBATCH --partition=gl40
 #SBATCH --job-name=WARP
 #SBATCH --ntasks=1
 #SBATCH --nodes=1
-#SBATCH --cpus-per-task=256
-#SBATCH --error=warp_err.log
-#SBATCH --output=warp_out.log
+#SBATCH --cpus-per-task=64
+#SBATCH --error=AT_err.log
+#SBATCH --output=AT_out.log
 #SBATCH --gres=gpu:4
 #SBATCH --mem=0
 #SBATCH --time=1-0:0:0
+#SBATCH --reservation=gl40
 
 ml WarpTools/2.0.0
 source activate warp
 ml AreTomo2
 WarpTools ts_aretomo --settings warp_tiltseries.settings --angpix 10 --alignz 1500 --axis 93 --axis_iter 3 --device_list 4
 ```
+the flag -- min_fov excludes tilts which have drifted away from the tomograms field of view. You can determine how much shift is acceptable, I use 0.1 which disables tilts containing less than 10% of the tomos field of view. 
+
+### Defocus and flipping
 ```
 Sbatch defocus hand and flipping if needed 
 Warp_hand
 #!/bin/bash
-#SBATCH --partition=ga100
+#SBATCH --partition=gl40
 #SBATCH --job-name=WARP
 #SBATCH --ntasks=1
 #SBATCH --nodes=1
-#SBATCH --cpus-per-task=64
-#SBATCH --error=warp_err.log
-#SBATCH --output=warp_out.log
+#SBATCH --cpus-per-task=16
+#SBATCH --error=defocus_err.log
+#SBATCH --output=defocus_out.log
 #SBATCH --gres=gpu:1
-#SBATCH --mem=0
+#SBATCH --mem=200G
 #SBATCH --time=1-0:0:0
+#SBATCH --reservation=gl40
 
 ml WarpTools/2.0.0
 source activate warp
 WarpTools ts_defocus_hand --settings warp_tiltseries.settings --check
-
+```
+```
 Warp_flip
 #!/bin/bash
-#SBATCH --partition=ga100
+#SBATCH --partition=gl40
 #SBATCH --job-name=WARP
 #SBATCH --ntasks=1
 #SBATCH --nodes=1
-#SBATCH --cpus-per-task=64
+#SBATCH --cpus-per-task=16
 #SBATCH --error=warp_err.log
 #SBATCH --output=warp_out.log
 #SBATCH --gres=gpu:1
-#SBATCH --mem=0
+#SBATCH --mem=200G
 #SBATCH --time=1-0:0:0
+#SBATCH --reservation=gl40
 
 ml WarpTools/2.0.0
 source activate warp
 WarpTools ts_defocus_hand --settings warp_tiltseries.settings --set_flip
 ```
-
+### CTF
 ```
 Warp_ctf
 #!/bin/bash
-#SBATCH --partition=ga100
+#SBATCH --partition=gl40
 #SBATCH --job-name=WARP
 #SBATCH --ntasks=1
 #SBATCH --nodes=1
-#SBATCH --cpus-per-task=256
-#SBATCH --error=warp_err.log
-#SBATCH --output=warp_out.log
+#SBATCH --cpus-per-task=64
+#SBATCH --error=ctf_err.log
+#SBATCH --output=ctf_out.log
 #SBATCH --gres=gpu:4
 #SBATCH --mem=0
 #SBATCH --time=1-0:0:0
+#SBATCH --reservation=gl40
 
 ml WarpTools/2.0.0
 source activate warp
-WarpTools ts_ctf --settings warp_tiltseries.settings --range_high 8 --defocus_max 11.5 --defocus_min 5.5
+WarpTools ts_ctf --settings warp_tiltseries.settings --range_high 8 --defocus_max 11.5 --defocus_min 5.5 
 ```
+
+### Reconstruction
 ```                                                                                                 
 Warp_reconstruct 
 #!/bin/bash
-#SBATCH --partition=ga100
+#SBATCH --partition=gl40
 #SBATCH --job-name=WARP
 #SBATCH --ntasks=1
 #SBATCH --nodes=1
-#SBATCH --cpus-per-task=256
-#SBATCH --error=warp_err.log
-#SBATCH --output=warp_out.log
+#SBATCH --cpus-per-task=64
+#SBATCH --error=recon_err.log
+#SBATCH --output=recon_out.log
 #SBATCH --gres=gpu:4
 #SBATCH --mem=0
 #SBATCH --time=1-0:0:0
+#SBATCH --reservation=gl40
 
 ml WarpTools/2.0.0
 source activate warp
 
-WarpTools ts_reconstruct --settings warp_tiltseries.settings --angpix 10 --halfmap_frames --dont_invert
+WarpTools ts_reconstruct --settings warp_tiltseries.settings --angpix 10 --halfmap_frames --dont_invert 
 
 ```
 Congratulations warp is done. You can now browse your tomograms and check they are ok ahead of denoising. 
