@@ -636,6 +636,7 @@ source activate warp
 ml AreTomo2
 WarpTools ts_aretomo --settings warp_tiltseries.settings --angpix 10 --alignz 1500 --axis 93 --axis_iter 3 --device_list 4
 ```
+#### Automatic Removal of Bad Tilts 2 (2 Bad 2 Tilt)
 the flag -- min_fov excludes tilts which have drifted away from the tomograms field of view. You can determine how much shift is acceptable, I use 0.1 which disables tilts containing less than 10% of the tomos field of view. 
 
 ### Defocus and flipping
