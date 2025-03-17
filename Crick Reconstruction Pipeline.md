@@ -903,10 +903,10 @@ Inside mkdir called tomos
 Ln tomos want to train on 
 
 ```
-ml IsoNet 
-source activate isonet 
+ml IsoNet/0.2.1
+source activate isonet-0.2.1
 
-isonet.py prepare_star tomo_folder --pixel_size 10
+isonet.py prepare_star tomos --pixel_size 10
 ```
 
 Make mask. Telling isonet where to look for features. i.e. ignore top and bottom 20% of Z.  
@@ -939,8 +939,8 @@ sbatch isonet_command
 #SBATCH --mem=0
 #SBATCH --time=1-0:0:0
 
-ml IsoNet
-source activate isonet
+ml IsoNet/0.2.1
+source activate isonet-0.2.1
 isonet.py refine subtomo.star --iterations 30 --noise_level 0.1,0.2 --noise_start_iter 11,21
 ```
 This takes ages... 
@@ -968,8 +968,8 @@ Make a new star file with tomograms you want to predict. Suggest start with the 
 #SBATCH --mem=0
 #SBATCH --time=1-0:0:0
 
-ml IsoNet
-source activate isonet
+ml IsoNet/0.2.1
+source activate isonet-0.2.1
 isonet.py predict tomograms.star yourpath/isonet/results/model_iter30.h5 --gpuID 0,1,2,3
 ```
 
