@@ -15,3 +15,7 @@ foreach file (`cat $file_list`)
 end
 
 ```
+to change files from 10.00 in file name to 10_00 use:
+```
+for FILE in *; do mv "$FILE" "${FILE//10./10_}"; done
+```
