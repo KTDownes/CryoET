@@ -916,10 +916,10 @@ isonet.py make_mask tomograms.star –z_crop 0.2
 
 Sanity check - look at output in mask. If it looks right...
 
-Extract into subtomos 
+Extract into subtomos via gui
 
 ```
-isonet.py prepare_subtomo_star folder_name [--output_star]
+isonet.py prepare_subtomo_star subtomo [--output_star]
 ```
 
 Now ready to train. Need gpu 
@@ -928,16 +928,17 @@ Now ready to train. Need gpu
 sbatch isonet_command 
 
 #!/bin/bash
-#SBATCH --partition=ga100
+#SBATCH --partition=gl40
 #SBATCH --job-name=IsoNet
 #SBATCH --ntasks=1
 #SBATCH --nodes=1
-#SBATCH --cpus-per-task=256
+#SBATCH --cpus-per-task=64
 #SBATCH --error=isonet_err.log
 #SBATCH --output=isonet_out.log
 #SBATCH --gres=gpu:4
 #SBATCH --mem=0
 #SBATCH --time=1-0:0:0
+#SBATCH  --reservation=gl40
 
 ml IsoNet/0.2.1
 source activate isonet-0.2.1
