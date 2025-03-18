@@ -958,16 +958,17 @@ Make a new star file with tomograms you want to predict. Suggest start with the 
 
 ```
 #!/bin/bash
-#SBATCH --partition=ga100
+#SBATCH --partition=gl40
 #SBATCH --job-name=IsoNet
 #SBATCH --ntasks=1
 #SBATCH --nodes=1
-#SBATCH --cpus-per-task=256
-#SBATCH --error=isonet_err.log
-#SBATCH --output=isonet_out.log
+#SBATCH --cpus-per-task=64
+#SBATCH --error=predict_err.log
+#SBATCH --output=predict_out.log
 #SBATCH --gres=gpu:4
-#SBATCH --mem=0
+#SBATCH --mem=200G
 #SBATCH --time=1-0:0:0
+#SBATCH --reservation=gl40
 
 ml IsoNet/0.2.1
 source activate isonet-0.2.1
