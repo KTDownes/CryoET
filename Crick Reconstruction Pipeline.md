@@ -178,16 +178,17 @@ If you are requesting n GPUs, request n/4 CPU.
 **1. Extract tilts from mdocs**
 ```
 #!/bin/bash
-#SBATCH --partition=ga100
+#SBATCH --partition=gl40
 #SBATCH --job-name=tilts
 #SBATCH --ntasks=1
 #SBATCH --nodes=1
-#SBATCH --cpus-per-task=64
+#SBATCH --cpus-per-task=16
 #SBATCH --error=tlt_err.log
 #SBATCH --output=tlt_out.log
 #SBATCH --gres=gpu:1
 #SBATCH --mem=0
 #SBATCH --time=1-0:0:0
+#SBATCH --reservation=gl40
 
 ml imod
 source $IMOD_DIR/IMOD-linux_vis.sh
@@ -223,16 +224,17 @@ done
 **2. Imod motion correction**
 ```
 #!/bin/bash
-#SBATCH --partition=ga100
+#SBATCH --partition=gl40
 #SBATCH --job-name=motioncorr
 #SBATCH --ntasks=1
 #SBATCH --nodes=1
-#SBATCH --cpus-per-task=256
+#SBATCH --cpus-per-task=64
 #SBATCH --error=motioncorr_err.log
 #SBATCH --output=motioncorr.log
 #SBATCH --gres=gpu:4
 #SBATCH --mem=0
 #SBATCH --time=1-0:0:0
+#SBATCH --reservation=gl40
 
 ml imod
 source $IMOD_DIR/IMOD-linux_vis.sh
