@@ -155,11 +155,11 @@ for mrc_file in "${mrc_files[@]}"; do
 done
 ```
 ## WARP pipeline
-mkdir WARP and cd inside
-mkdir original mdocs ln mdocs here
-mkdir frames ln frames here
-cd original mdocs and add adjust_angles.py inside
-adjust_angles.py
+mkdir WARP and cd inside  
+mkdir original mdocs ln mdocs here  
+mkdir frames ln frames here  
+cd original mdocs and add adjust_angles.py inside  
+adjust_angles.py  
 ```
 import glob
   
@@ -302,13 +302,13 @@ source activate warp
 ml AreTomo2
 WarpTools ts_aretomo --settings warp_tiltseries.settings --angpix 10 --alignz 600 --axis 93 --axis_iter 3 --device_list 4 --min_fov 0.1
 ```
-the flag -- min_fov excludes tilts which have drifted away from the tomograms field of view. You can determine how much shift is acceptable, I use 0.1 which disables tilts containing less than 10% of the tomos field of view.
-  Difference to stand alone AT:
-    our tilt axis is approc 93. axis_iter searches around this value to find best axis. In standalone AT this is just denoted as TiltCor1 (find and correct my tilt axis). 
-    Standalone has a default 0.7 DarkTol flag. This removes dark tilts. Cannot run this through warp. Removal of dark tilts occurs in the import step with min_intensity. Not sure of the relationship between DarkTol and min_intensity. I found 
-  min_intensity combined with the min_fov flag removes similar (sometimes more) tilts than AT and results in better recons than if neither are flag or if each are flagged independently. 
+The flag -- min_fov excludes tilts which have drifted away from the tomograms field of view. You can determine how much shift is acceptable, I use 0.1 which disables tilts containing less than 10% of the tomos field of view.  
+  
+**Difference to stand alone AT:**  
+    Our tilt axis is approx 93. axis_iter searches around this value to find best axis. In standalone AT this is just denoted as TiltCor1 (find and correct my tilt axis).   
+    Standalone has a default 0.7 DarkTol flag. This removes dark tilts. Cannot run this through warp. Removal of dark tilts occurs in the import step with min_intensity. Not sure of the relationship between DarkTol and min_intensity. I found min_intensity combined with the min_fov flag removes similar (sometimes more) tilts than AT and results in better recons than if neither are flag or if each are flagged independently.   
 
-Sbatch defocus hand and flipping if needed 
+Sbatch defocus hand and flipping if needed  
 Warp_hand
 ```
 #!/bin/bash
